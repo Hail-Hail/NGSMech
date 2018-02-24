@@ -1,0 +1,5 @@
+name: NGSMech
+version: ${project.version}
+main: ngsmech.mech.Mech
+commands:
+  mech:
