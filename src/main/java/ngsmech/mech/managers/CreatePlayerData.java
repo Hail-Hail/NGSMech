@@ -36,6 +36,7 @@ public class CreatePlayerData implements Listener {
             yaml.set("masterName", "パイロット");
             yaml.set("mechName", "Mech");
             yaml.set("chatColor", "§f§l");
+            yaml.set("pilotAbility", "Grapple");
             yaml.save(playerFile);
         } catch (IOException ee) {
             ee.printStackTrace();

@@ -9,6 +9,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -28,13 +29,15 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MechRide  implements Listener {
+public class MechRide implements Listener {
 
     String prefix = "§f§l[§6§lMech§f§l]";
 
     Mech plugin = Mech.getPlugin(Mech.class);
 
     public List<Player> EscapeMech = new ArrayList<>();
+
+    public List<Player> MechDeath = new ArrayList<>();
 
     public MechRide() {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -138,10 +141,31 @@ public class MechRide  implements Listener {
         if (mech.getName().equals(player.getName())) {
             plugin.RideMech.add(player);
             mech.setPassenger(player);
+
+            double health = ((IronGolem) mech).getHealth();
+
+            if (health <= 100) {
+
+                player.sendMessage(yaml.getString("mechName") + "§r: " + yaml.getString("chatColor") + "機体損傷危険域");
+
+                plugin.MechHealthLow.add(player);
+
+            }
+
             player.sendMessage(yaml.getString("mechName") + "§r: " + yaml.getString("chatColor") + "おかえりなさい、" + "§r" + yaml.getString("masterName"));
             new BukkitRunnable() {
                 @Override
                 public void run() {
+
+                    if (MechDeath.contains(player)) {
+                        MechDeath.remove(player);
+                        plugin.RideMech.remove(player);
+                        EscapeMech.remove(player);
+                        plugin.MechHealthLow.remove(player);
+                        player.damage(40);
+                        this.cancel();
+                        return;
+                    }
 
                     if (!plugin.RideMech.contains(player)) {
 
@@ -186,29 +210,55 @@ public class MechRide  implements Listener {
 
     @EventHandler
     public void MechRidePlayer(EntityDamageEvent e) {
-        LivingEntity player = (Player) e.getEntity();
+
+        Entity entity = e.getEntity();
+
+        if (!(entity instanceof Player)) {
+            return;
+        }
+
+        Player player = ((Player) entity).getPlayer();
+
         if (plugin.RideMech.contains(player)) {
             e.setCancelled(true);
+            return;
         }
+
     }
 
     @EventHandler
-    public void PlayertoMechDamage(EntityDamageByEntityEvent e) {
+    public void MechDeath(EntityDeathEvent e) {
 
         Entity mech = e.getEntity();
-        Entity rider = mech.getPassenger();
-        Entity damager = e.getDamager();
 
-        //処理が上手くいかない
-        if (mech.getName().equals(rider.getName())) {
-            if (rider.getName().equals(damager)) {
-                e.setCancelled(true);
-            }
+        if (!(mech instanceof IronGolem)) {
+            return;
         }
+
+        mech.getWorld().spawnParticle(Particle.EXPLOSION_HUGE, mech.getLocation().getX(), mech.getLocation().getY(), mech.getLocation().getZ(), 10, 0, 1, 0);
+
+        Player player = (Player) mech.getPassenger();
+
+        if (!(player instanceof Player)) {
+            return;
+        }
+
+        File directory = new File(plugin.yamlapi.getPluginFolder(plugin.getName()), File.separator + "PlayerData");
+
+        File playerFile = new File(directory, File.separator + player.getUniqueId() + ".yml");
+        YamlConfiguration yaml = plugin.yamlapi.getYamlConf(playerFile);
+
+        player.sendMessage(yaml.getString("mechName") + "§r: " + yaml.getString("chatColor") + "申し訳ありません、" + "§r" + yaml.getString("masterName"));
+
+        MechDeath.add(player);
+
+        player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 5, 0);
+        player.getWorld().spawnParticle(Particle.EXPLOSION_HUGE, player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ(), 10, 0, 1, 0);
+
     }
 
     @EventHandler
-    public void MechHelth(EntityDamageEvent e) {
+    public void MechHealth(EntityDamageEvent e) {
 
         LivingEntity mech = (LivingEntity) e.getEntity();
 
@@ -246,6 +296,10 @@ public class MechRide  implements Listener {
     public void MechDismount(EntityDismountEvent e) {
 
         Player player = (Player) e.getEntity();
+
+        if (MechDeath.contains(player)) {
+            return;
+        }
 
         if (!plugin.RideMech.contains(player)) {
             return;

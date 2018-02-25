@@ -3,6 +3,7 @@ package ngsmech.mech;
 import com.google.common.collect.Lists;
 import ngsmech.mech.MechSystem.MechModule.SixthSence;
 import ngsmech.mech.MechSystem.MechRide;
+import ngsmech.mech.PilotAbility.Grapple;
 import ngsmech.mech.api.ActionBarAPI;
 import ngsmech.mech.api.YAMLAPI;
 import ngsmech.mech.data.Contents;
@@ -40,8 +41,15 @@ public final class Mech extends JavaPlugin implements Listener {
     public ngsmech.mech.managers.help help;
     public ngsmech.mech.managers.setname setname;
     public ngsmech.mech.managers.CreatePlayerData createplayerdata;
-    public ngsmech.mech.MechSystem.MechModule.SixthSence sixthsence;
+
+    //Mech
     public ngsmech.mech.MechSystem.MechRide mechRide;
+    public ngsmech.mech.MechSystem.MechModule.SixthSence sixthsence;
+
+    //Ability
+    public ngsmech.mech.PilotAbility.Grapple grapple;
+    public List<Player> AbilityNow = new ArrayList<>();
+    public List<Player> AbilityCooldown = new ArrayList<>();
 
     //data
     public Contents contents;
@@ -92,6 +100,7 @@ public final class Mech extends JavaPlugin implements Listener {
         contents = new Contents();
         sixthsence = new SixthSence();
         mechRide = new MechRide();
+        grapple = new Grapple();
     }
 
     private void apiInitialization() {

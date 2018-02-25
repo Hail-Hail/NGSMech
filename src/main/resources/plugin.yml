@@ -3,3 +3,4 @@ version: ${project.version}
 main: ngsmech.mech.Mech
 commands:
   mech:
+  ability:
